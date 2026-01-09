@@ -70,7 +70,9 @@
 
         .back img { width: 100%; height: 100%; object-fit: cover; }
         .front { transform: rotateY(180deg); }
-        .front img { width: 100%; height: 100%; object-fit: contain; background: white; }
+        
+        /* 【修正点1】画像を枠いっぱいに広げる設定に変更 */
+        .front img { width: 100%; height: 100%; object-fit: cover; background: white; }
 
         .shuffling { animation: shuffle-move 0.5s infinite ease-in-out; }
         @keyframes shuffle-move {
@@ -273,11 +275,10 @@
             const selectedCard = cards[index];
             const result = tarotData[Math.floor(Math.random() * tarotData.length)];
             
-            selectedCard.querySelector('.front').innerHTML = `<img src="${result.img}" style="width:100%;height:100%;object-fit:contain;">`;
+            /* 【修正点2】ここでも画像を枠いっぱいに広げる設定を適用 */
+            selectedCard.querySelector('.front').innerHTML = `<img src="${result.img}" style="width:100%;height:100%;object-fit:cover;">`;
             selectedCard.style.transform = "rotateY(180deg) scale(1.15)";
             selectedCard.style.zIndex = "10";
-
-            // ★ 演出削除：他のカードの透明度（opacity）を変更しないようにしました
 
             setTimeout(() => {
                 document.getElementById('card-name').innerText = result.name;
@@ -290,5 +291,3 @@
     </script>
 </body>
 </html>
-
-            
