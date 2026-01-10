@@ -28,13 +28,24 @@
             overflow-x: hidden; 
         }
         
-        .title { 
-            margin-top: 30px; 
-            font-size: 1.2rem; 
-            letter-spacing: 2px; 
-            color: var(--gold); 
-            font-weight: 700; 
-        }
+.title { 
+    margin-top: 30px; 
+    font-size: 1.2rem; 
+    letter-spacing: 2px; 
+    color: var(--gold); 
+    font-weight: 700; 
+    text-align: center; /* 中央揃えを確実にする */
+    line-height: 1.2;
+}
+
+/* Pocketの部分のデザイン */
+.title span {
+    display: block; /* 改行させる */
+    font-size: 0.9rem; /* 少し小さく */
+    letter-spacing: 5px; /* 文字の間隔を広げて高級感を出す */
+    margin-top: 5px;
+    opacity: 0.8; /* 少しだけ透けさせてサブタイトル感を出す */
+}
 
         #stage { 
             margin-top: 20px; 
@@ -175,7 +186,10 @@
 </head>
 <body>
 
-    <div class="title">ミルコーンの冒険タロット</div>
+<div class="title">
+    ミルコーンの冒険タロット
+    <span>Pocket</span>
+</div>
 
     <div id="stage">
         <div class="card-container" id="card0" onclick="chooseCard(0)">
