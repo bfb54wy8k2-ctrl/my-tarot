@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ミルコーンの冒険タロットPocket</title>
+    <title>ミルポケ</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
     <link rel="apple-touch-icon" href="images/icon.png">
@@ -45,6 +45,7 @@
             gap: 10px; 
             height: 220px; 
             align-items: center; 
+            position: relative;
         }
         
         .card-container { 
@@ -70,9 +71,24 @@
 
         .back img { width: 100%; height: 100%; object-fit: cover; }
         .front { transform: rotateY(180deg); }
-        
-        /* 【修正点1】画像を枠いっぱいに広げる設定に変更 */
         .front img { width: 100%; height: 100%; object-fit: cover; background: white; }
+
+        /* キラキラエフェクト */
+        .sparkle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--gold);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 20;
+            box-shadow: 0 0 8px white;
+        }
+
+        @keyframes sparkle-anim {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
 
         .shuffling { animation: shuffle-move 0.5s infinite ease-in-out; }
         @keyframes shuffle-move {
@@ -111,6 +127,14 @@
             white-space: pre-wrap; 
             color: #444; 
             font-weight: 400;
+        }
+
+        /* タイマーのスタイル */
+        #timer {
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+            color: #aaa;
+            display: none;
         }
         
         .btn { 
@@ -155,6 +179,7 @@
         <p id="card-desc">解説文</p>
     </div>
 
+    <div id="timer"></div>
     <button class="btn" id="main-btn" onclick="startShuffle()">冒険に出発する</button>
 
     <script>
@@ -241,17 +266,72 @@
         ];
 
         let canChoose = false;
+        const MAX_PLAYS = 2;
+
+        function getPlayStatus() {
+            const today = new Date().toLocaleDateString();
+            const lastDate = localStorage.getItem('milcorn_date');
+            let count = localStorage.getItem('milcorn_count');
+
+            if (lastDate !== today) {
+                localStorage.setItem('milcorn_date', today);
+                localStorage.setItem('milcorn_count', MAX_PLAYS);
+                return { remaining: MAX_PLAYS };
+            }
+            return { remaining: parseInt(count) || 0 };
+        }
+
+        // タイマー更新
+        function updateTimer() {
+            const now = new Date();
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            const diff = tomorrow - now;
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            const timerEl = document.getElementById('timer');
+            timerEl.innerText = `次の無料分まで：あと ${hours}時間${minutes}分`;
+            timerEl.style.display = "block";
+        }
+
+        // キラキラ生成
+        function createSparkles(x, y) {
+            const stage = document.getElementById('stage');
+            for (let i = 0; i < 20; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = x + 'px';
+                sparkle.style.top = y + 'px';
+                const tx = (Math.random() - 0.5) * 160;
+                const ty = (Math.random() - 0.5) * 160;
+                sparkle.style.setProperty('--tx', tx + 'px');
+                sparkle.style.setProperty('--ty', ty + 'px');
+                sparkle.style.animation = `sparkle-anim ${Math.random() * 0.4 + 0.4}s forwards`;
+                stage.appendChild(sparkle);
+                setTimeout(() => sparkle.remove(), 800);
+            }
+        }
 
         function startShuffle() {
             const btn = document.getElementById('main-btn');
             const detail = document.getElementById('detail');
-            const cards = [document.getElementById('card0'), document.getElementById('card1'), document.getElementById('card2')];
+            const timerEl = document.getElementById('timer');
+            const status = getPlayStatus();
 
+            if (status.remaining <= 0) {
+                alert("今日の無料鑑定（2回）は終了しました！🦄✨\n無制限で引きたい！恋愛についてのメッセージが知りたい方は有料版へ💖");
+                window.location.href = "https://milcorn.com/premium"; // 有料版のURLをここに入れる
+                return;
+            }
+
+            timerEl.style.display = "none";
             detail.style.display = "none";
             btn.disabled = true;
             btn.innerText = "まぜまぜ中...";
             canChoose = false;
 
+            const cards = [document.getElementById('card0'), document.getElementById('card1'), document.getElementById('card2')];
             cards.forEach((card, i) => {
                 card.style.transform = "rotateY(0deg) scale(1)";
                 card.style.opacity = "1";
@@ -275,19 +355,44 @@
             const selectedCard = cards[index];
             const result = tarotData[Math.floor(Math.random() * tarotData.length)];
             
-            /* 【修正点2】ここでも画像を枠いっぱいに広げる設定を適用 */
+            let status = getPlayStatus();
+            let nextCount = status.remaining - 1;
+            localStorage.setItem('milcorn_count', nextCount);
+            
             selectedCard.querySelector('.front').innerHTML = `<img src="${result.img}" style="width:100%;height:100%;object-fit:cover;">`;
             selectedCard.style.transform = "rotateY(180deg) scale(1.15)";
             selectedCard.style.zIndex = "10";
 
+            const rect = selectedCard.getBoundingClientRect();
+            const stageRect = document.getElementById('stage').getBoundingClientRect();
+            createSparkles(rect.left - stageRect.left + 47, rect.top - stageRect.top + 80);
+
             setTimeout(() => {
                 document.getElementById('card-name').innerText = result.name;
-                document.getElementById('card-desc').innerText = result.desc;
+                let footerMsg = nextCount > 0 ? 
+                    `\n\n【今日はあと${nextCount}回引けます🦄🌈】` : 
+                    `\n\n【無料版はここまで🦄🌙】\n無制限で引きたい！恋愛についてのメッセージが知りたい方は有料版へ💖`;
+
+                document.getElementById('card-desc').innerText = result.desc + footerMsg;
                 document.getElementById('detail').style.display = "block";
                 document.getElementById('main-btn').disabled = false;
-                document.getElementById('main-btn').innerText = "もう一回占う！";
+                
+                if (nextCount > 0) {
+                    document.getElementById('main-btn').innerText = "もう一回占う！";
+                } else {
+                    document.getElementById('main-btn').innerText = "有料版をチェック💖";
+                    updateTimer();
+                }
             }, 600);
         }
+
+        // ページ読み込み時に既に0回ならタイマーを出す
+        window.onload = () => {
+            if (getPlayStatus().remaining <= 0) {
+                updateTimer();
+                document.getElementById('main-btn').innerText = "有料版をチェック💖";
+            }
+        };
     </script>
 </body>
 </html>
